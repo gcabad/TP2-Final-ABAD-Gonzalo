@@ -67,24 +67,16 @@ class ApiLibros {
                 if(libro.estado == 'disponible')
                 {
                     libro.estado = estado
-                    try{
-                        let sorteoGanado
-                        request('https://libros.deno.dev/premios', (error, response, body) => {
-                            sorteoGanado = JSON.parse(body).premio
-                        })
-                        if(sorteoGanado) 
-                        {
-                            await this.librosModel.deleteLibro(codigo)
-                            console.log("Usted ha ganado el sorteo!")
-                            return {mensaje: "Ha ganado el sorteo!!", premio: libro.titulo + " - " + libro.autor}
-                        }
-                        else {
-                            console.log("No ha ganado el sorteo... mejor suerte la proxima")
-                            return await this.librosModel.updateLibro(libro,codigo)
-                        }
-                    } catch(error)
+                    let resultadoSorteo = this.consultarSorteo()
+                    if(resultadoSorteo.premio) 
                     {
-                        console.log('ocurrio un error verificando el sorteo', error)
+                        await this.librosModel.deleteLibro(codigo)
+                        console.log("Usted ha ganado el sorteo!")
+                        return {mensaje: `Ha ganado el sorteo del libro ${libro.titulo} del autor ${libro.autor}`}
+                    }
+                    else {
+                        console.log(`No ha ganado el sorteo... mejor suerte la proxima.`)
+                        return await this.librosModel.updateLibro(libro,codigo)
                     }
                 }
                 else
@@ -99,6 +91,15 @@ class ApiLibros {
     eliminarLibro = async codigo => {
         return await this.librosModel.deleteLibro(codigo)
     }
+
+    consultarSorteo = async _ => {
+        let body
+        request('https://libros.deno.dev/premios', (error, response, body) => {
+            body = JSON.parse(body)
+        })
+        return body
+    }
+
 }
 
 export default ApiLibros
